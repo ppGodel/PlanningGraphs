@@ -19,9 +19,10 @@ low = c('maxloadcentrality', 'ccmaxrichclub1', 'ccm1',
 skip = c(ignore, singularities, insignificant, low)
 
 minObs = 100
+minUniq = 5
 redrawScatter = TRUE
 redrawCorr = TRUE
-remakeFormula = TRUE
+remakeFormula = FALSE
 
 process <- function(df) {
     formula = 'ms ~ m'
@@ -75,20 +76,20 @@ process <- function(df) {
 raw = read.csv('stats.csv')
 all = read.csv('IPCResults.csv')
 valid = all[all$comp == 'IPC1998',] # leave out the IPC 1998 to use in the validation phase
-explore = all[all$comp == 'IPC2000',] # use the IPC 2000 in the exploratory analysis
-results = merge(x = explore, y = raw, by = 'Problem', all = FALSE)
+expl = all[all$comp == 'IPC2000',] # use the IPC 2000 in the exploratory analysis
+results = merge(x = expl, y = raw, by = 'Problem', all = FALSE)
 validation = merge(x = valid, y = raw, by = 'Problem', all = FALSE)
 
 rm(all)
-rm(explore)
+rm(expl)
 rm(raw)
 
 vars = ncol(results)
-library(dplyr) # filter
-library(ggplot2)
-library(ggrepel)
-require(gridExtra)
-require(cowplot)
+suppressMessages(library(dplyr)) # filter
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggrepel))
+suppressMessages(require(gridExtra))
+suppressMessages(require(cowplot))
 results = filter(results, !is.na(results$ms))
 results$Planner = factor(results$Planner)
 results$Dom = factor(results$Dom)
@@ -147,35 +148,42 @@ if (redrawScatter) {
     size = results$m
     runtime = results$ms
     i = 1
-    for (target in names(results)) {
-        p0 = ggplot(results, aes_string(x = order, y = size)) +
-            geom_point(aes(color = planner, shape = domain)) +
-            scale_shape_manual(values = shapes) +
-            theme(legend.box = "horizontal") +
-            guides(fill=guide_legend(ncol=4))
-        p1 = ggplot(results, aes_string(x = order, y = target)) +
-            geom_point(aes(color = planner, shape = domain), size = s, alpha = a) +
-            scale_shape_manual(values = shapes) +
-            theme(legend.position = "none") +
-            xlab("Order") +
-            ylab(target)
-        p2 = ggplot(results, aes_string(x = size, y = target)) +
-            geom_point(aes(color = planner, shape = domain), size = s, alpha = a) +
-            scale_shape_manual(values = shapes) +
-            theme(legend.position = "none") +
-            xlab("Size") +
-            ylab(target)
-        p3 = ggplot(results, aes_string(x = runtime, y = target)) +
-            geom_point(aes(color = planner, shape = domain), size = s, alpha = a) +
-            scale_shape_manual(values = shapes) +
-            theme(legend.position = "none") +
-            xlab("Runtime") +
-            ylab(target)
-        legend = cowplot::get_legend(p0)
-        png(sprintf("nmt_%d.png", i), width = 900, height = 900)
-        i = i + 1
-        grid.arrange(p1, p2, p3, legend, top = target)
-        dev.off()
+    skip = c('Problem', 'Time', 'comp')
+    targets = names(results)
+    for (target in targets[!targets  %in% skip]) {
+        if (length(unique(results$target)) >= minUniq) { # enough unique values for the vertical axis
+            cat('creating a scatter plot for', target, '\n')
+            p0 = ggplot(results, aes_string(x = order, y = size)) +
+                geom_point(aes(color = planner, shape = domain)) +
+                scale_shape_manual(values = shapes) +
+                theme(legend.box = "horizontal") +
+                guides(fill=guide_legend(ncol=4))
+            p1 = ggplot(results, aes_string(x = order, y = target)) +
+                geom_point(aes(color = planner, shape = domain), size = ps, alpha = a) +
+                scale_shape_manual(values = shapes) +
+                theme(legend.position = "none") +
+                xlab("Order") +
+                ylab(target)
+            p2 = ggplot(results, aes_string(x = size, y = target)) +
+                geom_point(aes(color = planner, shape = domain), size = ps, alpha = a) +
+                scale_shape_manual(values = shapes) +
+                theme(legend.position = "none") +
+                xlab("Size") +
+                ylab(target)
+            p3 = ggplot(results, aes_string(x = runtime, y = target)) +
+                geom_point(aes(color = planner, shape = domain), size = ps, alpha = a) +
+                scale_shape_manual(values = shapes) +
+                theme(legend.position = "none") +
+                xlab("Runtime") +
+                ylab(target)
+            legend = cowplot::get_legend(p0)
+            png(sprintf("nmt_%d.png", i), width = 900, height = 900)
+            i = i + 1
+            grid.arrange(p1, p2, p3, legend, top = target)
+            dev.off()
+        } else {
+            cat('skipping unhelpful scatter plot for', target, '\n')
+        }
     }
 }
 if (redrawCorr) {
@@ -193,50 +201,125 @@ if (redrawCorr) {
     cat(names(comb)[1:6], '\n')
     cat(sapply(comb, typeof)[1:6], '\n')
     cat(sapply(comb, class)[1:6], '\n')
-    library("corrplot")
-    library("data.table")
+    suppressMessages(library("corrplot"))
+    suppressMessages(library("psych"))
+    suppressMessages(library("data.table"))
     factors = c(1, 2, 3, 6) # non-numeric measurements
     mat = as.data.table(comb[, -factors]) # remove factors
-    w = 1300
-    h = 1300
-    m = mat[, .SD, .SDcols = names(mat) %like% "lvl"]
+    w = 2000
+    h = 2000
+    lvlm = mat[, .SD, .SDcols = names(mat) %like% "lvl"]
     for (lvl in 0:3) {
         label = sprintf("lvl%d", lvl)
         cat(label, '\n')
-        sel = mat[, .SD, .SDcols = names(mat) %like% label]
-        m = sel[, .SD, .SDcols = names(sel) %like% "cc"]
-        cm = cor(as.matrix(m), method = 'pearson', use = 'pairwise.complete.obs')
-        filename = sprintf('corr_cc%s.png', label)
-        cat(filename, '\n')
-        png(filename, width = (5 - lvl) * w, height = (5 - lvl) * h)
-        corrplot(cm, type = 'upper', tl.cex = 2)
-        graphics.off()
-        m = sel[, .SD, .SDcols = ! names(sel) %like% "cc"]
-        cm = cor(as.matrix(m), method = 'pearson', use = 'pairwise.complete.obs')
-        filename = sprintf('corr_%s.png', label)
-        cat(filename, '\n')
-        png(filename, width = w, height = h)
-        corrplot(cm, type = 'upper', tl.cex = 2)
-        graphics.off()
-
+        sel = lvlm[, .SD, .SDcols = names(lvlm) %like% label]
+        mcc = sel[, .SD, .SDcols = names(sel) %like% "cc"]
+        omit = c()
+        for (i in names(mcc)) {
+            values = mcc[[i]]
+            values = values[!is.na(values)]
+            if (length(values) < 2 || sd(values) == 0) {
+                omit = c(omit, i)
+            }
+        }
+        cat('omitting', length(omit), 'from a total of', length(names(mcc)), 'for having zero std dev\n')
+        ok = !(names(mcc) %in% omit)
+        keep = mcc[ , ..ok]
+        cm = cor(keep, method = 'pearson', use = 'pairwise.complete.obs')
+        if (dim(cm)[1] > 1) { # if there are enough to analyze
+            groups = hclust(dist(abs(cm))) # cluster them
+            suppressMessages(suppressWarnings(library(dendextend)))
+            d = as.dendrogram(groups)
+            db = color_branches(d, k = 4)
+            dl = color_labels(db, k = 4)
+            png(sprintf('clust_cc_%s.png', label), width = w, height = h)
+            par(mar = c(0,18,0,0))
+            plot_horiz.dendrogram(dl, side = TRUE, sub="", main="", axes=F)
+            invisible(dev.off())
+            filename = sprintf('corr_cc%s.png', label)
+            cat(filename, '\n')
+            png(filename, width = (5 - lvl) * w, height = (5 - lvl) * h)
+            co = rev(groups$order)
+            ocm = cm[co, co]
+            signif = corr.test(keep, adjust="none")$p[co, co]
+            ccolor = ifelse(c(!is.na(signif) & signif < 0.01), "black", "white")
+            corrplot(ocm, type = 'upper', tl.cex = 0.5, cl.cex = 0.1, insig = "blank", method = "color", addCoef.col = ccolor, addCoefasPercent = TRUE)
+            graphics.off()
+        } else {
+            cat('level',  lvl, 'has too few variable measures for a cc corrplot\n')
+        }
+        mncc = sel[, .SD, .SDcols = ! names(sel) %like% "cc"]
+        omit = c()
+        for (i in names(mncc)) {
+            values = mncc[[i]]
+            values = values[!is.na(values)]
+            if (length(values) < 2 || sd(values) == 0) {
+                omit = c(omit, i)
+            }
+        }
+        cat('omitting', length(omit), 'from a total of', length(names(mncc)), 'for having zero std dev\n')
+        ok = !(names(mncc) %in% omit)
+        keep = mncc[ , ..ok]
+        cm = cor(keep, method = 'pearson', use = 'pairwise.complete.obs')
+        if (dim(cm)[1] > 1) {
+            groups = hclust(dist(abs(cm)))
+            suppressMessages(suppressWarnings(library(dendextend)))
+            d = as.dendrogram(groups)
+            db = color_branches(d, k = 4)
+            dl = color_labels(db, k = 4)
+            png(sprintf('clust_ncc_%s.png', label), width = w, height = h)
+            par(mar = c(0,18,0,0))
+            plot_horiz.dendrogram(dl, side = TRUE, sub="", main="", axes=F)
+            invisible(dev.off())
+            filename = sprintf('corr_%s.png', label)
+            png(filename, width = w, height = h)
+            co = rev(groups$order)
+            ocm = cm[co, co]
+            signif = corr.test(keep, adjust="none")$p[co, co]
+            ccolor = ifelse(c(!is.na(signif) & signif < 0.01), "black", "white")
+            corrplot(ocm, type = 'upper', tl.cex = 0.5, cl.cex = 0.1, insig = "blank", method = "color", addCoef.col = ccolor, addCoefasPercent = TRUE)
+            graphics.off()
+        } else {
+            cat('level',  lvl, 'has too few variable measures for a non-cc corrplot\n')
+        }
     }
     sel = mat[, .SD, .SDcols = names(mat) %like% "cc"]
-    m = sel[, .SD, .SDcols = ! names(sel) %like% "lvl"]
-    cm = cor(as.matrix(m), method = 'pearson', use = 'pairwise.complete.obs')
-    png('corr_cc.png', width = 2 * w, height = 2 * h)
-    corrplot(cm, type = 'upper', tl.cex = 2)
-    graphics.off()
-    sel = mat[, .SD, .SDcols = ! names(mat) %like% "lvl"]
-    m = sel[, .SD, .SDcols = ! names(sel) %like% "cc"]
-    cm = cor(as.matrix(m), method = 'pearson', use = 'pairwise.complete.obs')
-    png('corr.png', width = w, height = h)
-    corrplot(cm, type = 'upper', tl.cex = 2)
-    graphics.off()
+    mnlvl = sel[, .SD, .SDcols = ! names(sel) %like% "lvl"]
+    omit = c()
+    for (i in names(mnlvl)) {
+        values = mnlvl[[i]]
+        values = values[!is.na(values)]
+        if (length(values) < 2 || sd(values) == 0) {
+            omit = c(omit, i)
+        }
+    }
+    cat('omitting', length(omit), 'from a total of', length(names(mncc)), 'for having zero std dev\n')
+    ok = !(names(mnlvl) %in% omit)
+    keep = mnlvl[ , ..ok]
+    cm = cor(keep, method = 'pearson', use = 'pairwise.complete.obs')
+    if (dim(cm)[1] > 1) {
+        groups = hclust(dist(abs(cm)))
+        suppressMessages(suppressWarnings(library(dendextend)))
+        d = as.dendrogram(groups)
+        db = color_branches(d, k = 4)
+        dl = color_labels(db, k = 4)
+        png('clust_nlvl.png', width = w, height = h)
+        par(mar = c(0,18,0,0))
+        plot_horiz.dendrogram(dl, side = TRUE, sub="", main="", axes=F)
+        invisible(dev.off())
+        png('corr_nlvl.png', width = w, height = h)
+        co = rev(groups$order)
+        ocm = cm[co, co]
+        signif = corr.test(keep, adjust="none")$p[co, co]
+        ccolor = ifelse(c(!is.na(signif) & signif < 0.01), "black", "white")
+        corrplot(ocm, type = 'upper', tl.cex = 0.5, cl.cex = 0.1, insig = "blank", method = "color", addCoef.col = ccolor, addCoefasPercent = TRUE)
+        graphics.off()
+    }
 }
 
-                                        # normalizations based on scatter plots
+                                        # normalizations based on visual inspection of the scatter plots
 results$vertexcoverorder = results$vertexcoverorder / results$n
-results$edgecoverorder = results$edgecoverorder / results$n # counterintuitive, but yes
+results$edgecoverorder = results$edgecoverorder / results$n # perhaps counterintuitive, but necessary
 results$ccn1 = results$ccn1 / results$n
 results$ccm1 = results$ccn1 / results$m
 results$actions = results$actions / results$n
