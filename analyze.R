@@ -19,9 +19,9 @@ low = c('maxloadcentrality', 'ccmaxrichclub1', 'ccm1',
 skip = c(ignore, singularities, insignificant, low)
 
 minObs = 100
-redrawScatter = FALSE
-redrawCorr = FALSE
-remakeFormula = FALSE
+redrawScatter = TRUE
+redrawCorr = TRUE
+remakeFormula = TRUE
 
 process <- function(df) {
     formula = 'ms ~ m'
@@ -73,11 +73,16 @@ process <- function(df) {
 }
 
 raw = read.csv('stats.csv')
-ipc = read.csv('IPCResults.csv')
-results = merge(x = ipc, y = raw, by = 'Problem', all = FALSE)
+all = read.csv('IPCResults.csv')
+valid = all[all$comp == 'IPC1998',] # leave out the IPC 1998 to use in the validation phase
+explore = all[all$comp == 'IPC2000',] # use the IPC 2000 in the exploratory analysis
+results = merge(x = explore, y = raw, by = 'Problem', all = FALSE)
+validation = merge(x = valid, y = raw, by = 'Problem', all = FALSE)
 
-rm(ipc)
+rm(all)
+rm(explore)
 rm(raw)
+
 vars = ncol(results)
 library(dplyr) # filter
 library(ggplot2)

@@ -9,3 +9,4 @@ while read p; do
         echo $g 'extracted'
     fi
 done <graphs2.csv
+# these graphs are available for download at http://elisa.dyndns-web.com/PlanningGraphs/
