@@ -161,7 +161,7 @@ if (redoExpl) {
    p = p + scale_color_gradient(low="blue", high="red")
    p = p + theme_bw() # no gray background
    ggsave("unexplained.pdf", width = 20, height = 20, units = "cm")
-   vb = seq(250, 1500, 250)
+   vb = seq(250, 1250, 250)
    eb = seq(20000, 60000, 20000)
    p = ggplot(easy, aes(x=Time, y=unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
    p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
