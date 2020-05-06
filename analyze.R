@@ -18,6 +18,7 @@ as.numeric.factor <- function(x) {
 minObs = 100
 minUniq = 5
 redoIntro = FALSE
+redoExpl = TRUE
 redrawScatter = TRUE
 redrawCorr = TRUE
 remakeFormula = TRUE
@@ -106,21 +107,14 @@ if (redoIntro) {
 }
 
 results = combo %>% filter(comp == 'IPC1998') # leave out the IPC 1998 to use in the validation phase
+results = combo # TODO: actually filter them once the new characterizations are done
 print(head(results))
+print(names(results))
 print(summary(results$Time))
 print(summary(results$n))
 print(summary(results$m))
 print(summary(results$stepcount))
-quit()
-p = ggplot(results, aes(x=n, y=Time)) # basic measures: explained versus unexplained runtime
-p = p + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
-p = p + xlab('Number of nodes') + ylab('Reported runtime in milliseconds')
-p = p + labs(color = 'Number of levels', size  = 'Number of edges')
-p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
-p = p + xlim(1, 2000) + ylim(1, 3000000)
-p = p + scale_color_gradient(low="blue", high="red")
-p = p + theme_bw() # no gray background
-ggsave("defaults.pdf", width = 20, height = 20, units = "cm")
+
 model = lm(log(Time + 1) ~ log(n) * sqrt(m) * stepcount, data = results)
 s = summary(model)
 options(digits=3)
@@ -128,33 +122,77 @@ sink('model.txt')
 print(s)
 sink()
 print(s$adj.r.squared)
-results$explained = predict(model)
-p = ggplot(results, aes(x=n, y=explained)) + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
-p = p + xlab('Number of nodes') + ylab('Explained runtime in milliseconds')
-p = p + labs(color = 'Number of levels', size  = 'Number of edges')
-p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
-p = p + xlim(1, 2000) + ylim(1, 3000000)
-p = p + scale_color_gradient(low="blue", high="red")
-p = p + theme_bw() # no gray background
-ggsave("explained.pdf", width = 20, height = 20, units = "cm")
-results$unexplained = results$Time - results$explained
-p = ggplot(results, aes(x=n, y=unexplained)) + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
-p = p + xlab('Number of nodes') + ylab('Unexplained runtime in milliseconds')
-p = p + labs(color = 'Number of levels', size  = 'Number of edges')
-p = p + scale_x_continuous(trans = 'log2', labels = comma)
-p = p + scale_y_continuous(trans='log2', labels = comma)
-p = p + xlim(1, 2000) + ylim(1, 3000000)
-p = p + scale_color_gradient(low="blue", high="red")
-p = p + theme_bw() # no gray background
-ggsave("unexplained.pdf", width = 20, height = 20, units = "cm")
+results$modpred = predict(model)
+results$predicted = exp(results$modpred) - 1
+results$unexplained = results$Time - results$predicted # negative if easier than expected
+
+cat(c('total', dim(results)[1]), '\n')
+easy = filter(results, results$predicted > 2 * results$Time)
+cat(c('easy', dim(easy)[1]), '\n')
+hard = filter(results, results$predicted < results$Time / 2)
+cat(c('hard', dim(hard)[1]), '\n')
+regular = filter(results, ((results$predicted >= results$Time / 2) & (results$predicted <= 2 * results$Time)))
+cat(c('regular', dim(regular)[1]), '\n')
+
+if (redoExpl) {
+   p = ggplot(results, aes(x=n, y=Time)) # basic measures: predicted versus unexplained runtime
+   p = p + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
+   p = p + xlab('Number of nodes') + ylab('Reported runtime in milliseconds')
+   p = p + labs(color = 'Number of levels', size  = 'Number of edges')
+   p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
+#   p = p + xlim(1, 2000) + ylim(1, 3000000)
+   p = p + scale_color_gradient(low="blue", high="red")
+   p = p + theme_bw() # no gray background
+   ggsave("defaults.pdf", width = 20, height = 20, units = "cm")
+   p = ggplot(results, aes(x=n, y=predicted)) + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
+   p = p + xlab('Number of nodes') + ylab('Predicted runtime in milliseconds')
+   p = p + labs(color = 'Number of levels', size  = 'Number of edges')
+   p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
+#   p = p + xlim(1, 2000) + ylim(1, 100000)
+   p = p + scale_color_gradient(low="blue", high="red")
+   p = p + theme_bw() # no gray background
+   ggsave("explained.pdf", width = 20, height = 20, units = "cm")
+   p = ggplot(results, aes(x=n, y=unexplained)) + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
+   p = p + xlab('Number of nodes') + ylab('Unexplained runtime in milliseconds')
+   p = p + labs(color = 'Number of levels', size  = 'Number of edges')
+   p = p + scale_x_continuous(trans = 'log2', labels = comma)
+   p = p + scale_y_continuous(trans='log2', labels = comma)
+#   p = p + xlim(1, 2000) + ylim(1, 3000000)
+   p = p + scale_color_gradient(low="blue", high="red")
+   p = p + theme_bw() # no gray background
+   ggsave("unexplained.pdf", width = 20, height = 20, units = "cm")
+   vb = seq(250, 1500, 250)
+   eb = seq(20000, 60000, 20000)
+   p = ggplot(easy, aes(x=Time, y=unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
+   p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
+   p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
+   p = p + scale_x_continuous(trans='log2', labels = comma)
+#   p = p + xlim(1, 2000) + ylim(1, 3000000)
+   p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
+   p = p + theme_bw() # no gray background
+   ggsave("easy.pdf", width = 15, height = 17, units = "cm")
+   p = ggplot(hard, aes(x=Time, y=unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
+   p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
+   p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
+   p = p + scale_x_continuous(trans='log2', labels = comma)
+#   p = p + xlim(1, 2000) + ylim(1, 3000000)
+   p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
+   p = p + theme_bw() # no gray background
+   ggsave("hard.pdf", width = 15, height = 17, units = "cm")
+   p = ggplot(regular, aes(x=Time, y=unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
+   p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
+   p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
+   p = p + scale_x_continuous(trans='log2', labels = comma)
+#   p = p + xlim(1, 2000) + ylim(1, 3000000)
+   p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
+   p = p + theme_bw() # no gray background
+   ggsave("regular.pdf", width = 15, height = 17, units = "cm")
+}
 
 vars = ncol(results)
 results = filter(results, !is.na(results$ms))
 results$Planner = factor(results$Planner)
 results$Dom = factor(results$Dom)
-
-
-
 ignore = c('ms', 'n', 'm', 'proctime',
            'comp', 'Problem', 'Planner',
            'Domain', 'Dom', 'Time',
