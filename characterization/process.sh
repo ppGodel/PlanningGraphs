@@ -1,10 +1,9 @@
 timeout=300
 find . -size  0 -print0 | xargs -0 rm -- # clean up empty files
 if ! test -f 'attempts_${timeout}.lst'; then
-    echo 'new value for timeout; initializing log file'
     touch attempts_${timeout}.lst
 fi
-for f in `ls -1 /Users/elisa/Dropbox/Research/Topics/Planning/local/solved/graph/st*.graph`;
+for f in `ls -1 /Users/elisa/Dropbox/Research/Topics/Planning/local/solved/graph/*.graph`;
 do
     g=`basename $f .graph`
     echo 'attempting to process' $g

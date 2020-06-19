@@ -3,12 +3,12 @@ times = dict()
 steps = dict()
 stats = dict()
 header = set()
-with open('IPCResults.csv') as data:
+with open('../IPCResults.csv') as data:
     data.readline() # header row
     for line in data:
         fields = line.split(',')
         label = fields[2]
-        filename = 'solved/layers/{:s}.layers'.format(label) 
+        filename = '{:s}.stats'.format(label) 
         if os.path.isfile(filename):
             times[label] = int(float(fields[3]))
             steps[label] = int(fields[4])
