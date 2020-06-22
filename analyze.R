@@ -17,7 +17,7 @@ as.numeric.factor <- function(x) {
 
 minObs = 100
 minUniq = 5
-redoIntro = FALSE
+redoIntro = FALSE # already up to date
 redoExpl = TRUE
 redrawScatter = TRUE
 redrawCorr = TRUE
@@ -26,7 +26,10 @@ remakeFormula = TRUE
 all = read.csv('IPCResults.csv') # IPC results
 raw = read.csv('stats.csv') # our measurements
 combo = merge(x = all, y = raw, by = 'Problem')
+
+print('IPC results')
 print(summary(all$comp))
+print('Combined with measurements')
 print(summary(combo$comp))
 
 if (redoIntro) {
@@ -41,7 +44,7 @@ if (redoIntro) {
         p = p + scale_y_continuous(trans='log2', labels = comma)
         p = p + theme_bw() # no gray background
         filename = sprintf('domains_%s.pdf', co)
-        ggsave(filename, width = 2 * count, height = 10, units = "cm")
+        ggsave(filename, width = 3 * count, height = 10, units = "cm")
         count = length(levels(subset$Planner))
         p = ggplot(subset, aes(x = Planner, y = Time, fill = Planner))
         p = p + geom_violin(trim = FALSE) + geom_boxplot(width=0.1)
@@ -50,7 +53,7 @@ if (redoIntro) {
         p = p + scale_y_continuous(trans='log2', labels = comma)
         p = p + theme_bw() # no gray background
         filename = sprintf('planners_%s.pdf', co)
-        ggsave(filename, width = 2 * count, height = 10, units = "cm")
+        ggsave(filename, width = 10 * log(count), height = 12, units = "cm")
         qdw = length(levels(subset$Dom))
         qdh = length(levels(subset$Planner))
         count = 3 * qdh * qdw
@@ -108,14 +111,13 @@ if (redoIntro) {
 
 results = combo %>% filter(comp == 'IPC1998') # leave out the IPC 1998 to use in the validation phase
 results = combo # TODO: actually filter them once the new characterizations are done
-print(head(results))
 print(names(results))
 print(summary(results$Time))
 print(summary(results$n))
 print(summary(results$m))
 print(summary(results$stepcount))
 
-model = lm(log(Time + 1) ~ log(n) * sqrt(m) * stepcount, data = results)
+model = lm(log(Time + 1) ~ log(n) * log(m) * stepcount, data = results)
 s = summary(model)
 options(digits=3)
 sink('model.txt')
@@ -136,7 +138,7 @@ cat(c('regular', dim(regular)[1]), '\n')
 
 if (redoExpl) {
    p = ggplot(results, aes(x=n, y=Time)) # basic measures: predicted versus unexplained runtime
-   p = p + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
+   p = p + geom_point(aes(size = m, color = stepcount), alpha = 0.2)
    p = p + xlab('Number of nodes') + ylab('Reported runtime in milliseconds')
    p = p + labs(color = 'Number of levels', size  = 'Number of edges')
    p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
@@ -144,17 +146,19 @@ if (redoExpl) {
    p = p + scale_color_gradient(low="blue", high="red")
    p = p + theme_bw() # no gray background
    ggsave("defaults.pdf", width = 20, height = 20, units = "cm")
-   p = ggplot(results, aes(x=n, y=predicted)) + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
+   p = ggplot(results, aes(x=n, y=predicted)) + geom_point(aes(size = m, color = stepcount, shape = Dom), alpha = 0.5)
+   p = p + scale_shape_manual(values=1:nlevels(results$Dom))
    p = p + xlab('Number of nodes') + ylab('Predicted runtime in milliseconds')
-   p = p + labs(color = 'Number of levels', size  = 'Number of edges')
+   p = p + labs(color = 'Number of levels', size  = 'Number of edges', shape = 'Problem domain')
    p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
 #   p = p + xlim(1, 2000) + ylim(1, 100000)
    p = p + scale_color_gradient(low="blue", high="red")
    p = p + theme_bw() # no gray background
    ggsave("explained.pdf", width = 20, height = 20, units = "cm")
-   p = ggplot(results, aes(x=n, y=unexplained)) + geom_point(aes(size = m, color = stepcount), alpha = 0.5)
+   p = ggplot(results, aes(x=n, y=unexplained)) + geom_point(aes(size = m, color = stepcount, shape = Dom), alpha = 0.5)
+   p = p + scale_shape_manual(values=1:nlevels(results$Dom))
    p = p + xlab('Number of nodes') + ylab('Unexplained runtime in milliseconds')
-   p = p + labs(color = 'Number of levels', size  = 'Number of edges')
+   p = p + labs(color = 'Number of levels', size  = 'Number of edges', shape = 'Problem domain')
    p = p + scale_x_continuous(trans = 'log2', labels = comma)
    p = p + scale_y_continuous(trans='log2', labels = comma)
 #   p = p + xlim(1, 2000) + ylim(1, 3000000)
@@ -163,10 +167,11 @@ if (redoExpl) {
    ggsave("unexplained.pdf", width = 20, height = 20, units = "cm")
    vb = seq(250, 1250, 250)
    eb = seq(20000, 60000, 20000)
-   p = ggplot(easy, aes(x=Time, y=unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
-   p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
+   p = ggplot(easy, aes(x=Time, y=-unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
+   p = p + xlab('Actual runtime in milliseconds') + ylab('"Missing" runtime in milliseconds')
    p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
    p = p + scale_x_continuous(trans='log2', labels = comma)
+   p = p + scale_y_continuous(trans='log2', labels = comma)
 #   p = p + xlim(1, 2000) + ylim(1, 3000000)
    p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
    p = p + theme_bw() # no gray background
@@ -175,6 +180,7 @@ if (redoExpl) {
    p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
    p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
    p = p + scale_x_continuous(trans='log2', labels = comma)
+   p = p + scale_y_continuous(trans='log2', labels = comma)
 #   p = p + xlim(1, 2000) + ylim(1, 3000000)
    p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
    p = p + theme_bw() # no gray background
@@ -193,22 +199,12 @@ vars = ncol(results)
 results = filter(results, !is.na(results$ms))
 results$Planner = factor(results$Planner)
 results$Dom = factor(results$Dom)
-ignore = c('ms', 'n', 'm', 'proctime',
+skip = c('ms', 'n', 'm', 'proctime',
            'comp', 'Problem', 'Planner',
            'Domain', 'Dom', 'Time',
-           'Steps', 'stepcount') # not candidates for structural
-                                 # measures to begin with causing
-
-
-singularities = c('actions', 'ccdiameter1', 'ccradius1') # singularities UPDATE THESE
-insignificant = c('ccdensity1', 'ccmaxeccentricity1',
-                  'vertexcoverorder', 'ccn1',
-                  'maxbetweennesscentrality', 'ccperccenter1',
-                  'degreeassortativity', 'transitivity',
-                  'maxclosenesscentrality')  # low significance UPDATE THESE
-low = c('maxloadcentrality', 'ccmaxrichclub1', 'ccm1',
-        'ccpercperiphery1') # UPDATE THESE
-skip = c(ignore, singularities, insignificant, low)
+           'Steps', 'stepcount') # not potential structural measures
+listing = names(results)
+targets = listing[!listing  %in% skip]
 
 if (redrawScatter) {
     cutoff = 200000
@@ -224,10 +220,7 @@ if (redrawScatter) {
     a = 0.7
     ps = 3
     ts = 2
-    # 68 is avg degree conn and it was not computed for any of the tedious ones and is hence not drawn
-    special = c(12, 16, 17, 20, 21, 23, 38, 44, 52, 55, 58, 61)
-    for (s in special) {
-        target = names(results)[s]
+    for (target in targets) {
         p0 = ggplot(tedious, aes_string(x = order, y = size)) +
             geom_point(aes(color = planner, shape = domain)) +
             scale_shape_manual(values = shapes) +
@@ -266,8 +259,7 @@ if (redrawScatter) {
     size = results$m
     runtime = results$unexplained
     i = 1
-    targets = names(results)
-    for (target in targets[!targets  %in% skip]) {
+    for (target in targets) {
         if (length(unique(results$target)) >= minUniq) { # enough unique values for the vertical axis
             cat('creating a scatter plot for', target, '\n')
             p0 = ggplot(results, aes_string(x = order, y = size)) +
