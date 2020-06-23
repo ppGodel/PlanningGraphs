@@ -15,11 +15,11 @@ do
             echo $g 'does not finish within the current timeout'
         else
             echo 'processing' $g 'for' $timeout's max'
-            gtimeout ${timeout}s python3 layers.py $f > $g.cc
+            gtimeout ${timeout}s python3 layers.py $f > $g.stats
             code=$?
             if [ "$code" -eq "124" ]; then
                 echo "interrupted" $g
-                rm $g.stats
+                rm -f $g.stats
                 echo $g >> attempts_${timeout}.lst
 	    else
 		echo "concluded" $g
