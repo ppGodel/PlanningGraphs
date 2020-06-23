@@ -3,54 +3,40 @@ from sys import argv
 times = dict()
 steps = dict()
 stats = dict()
-header = set()
+stages = {'int1': 1, 'trans1': 2, 'int2': 3, 'trans2': 4, 'int3': 5}
+oh = None
+sh = set()
+
 with open('../IPCResults.csv') as data:
-    data.readline() # header row
+    oh = data.readline().strip().replace('Problem,', '').split(',')
     for line in data:
-        fields = line.split(',')
-        label = fields[2]
-        filename = '{:s}.cc'.format(label)
+        fields = line.strip().split(',')
+        problem = fields[2]
+        filename = '{:s}.stats'.format(problem)
         if os.path.isfile(filename):
-            times[label] = int(float(fields[3]))
-            steps[label] = int(fields[4])
-            stats[label] = dict()
-            ccID = 0
+            stats[problem] = dict()
+            for stage in range(1, 6):
+                stats[problem][stage] = dict()
+            stats[problem]['Planner'] = fields[0]
+            stats[problem]['Dom'] = fields[1]
+            stats[problem]['Time'] = fields[3]
+            stats[problem]['Steps'] = fields[4]
+            stats[problem]['Comp'] = fields[5] 
             with open(filename) as measurements:
-                if 'stats' in filename:
-                    if len(header) == 0:
-                        header = {'facts', 'actions', 'n', 'm', 'maxlevel'}
-                    stats[label]['facts'] = int(measurements.readline().split()[-1])
-                    stats[label]['actions'] = int(measurements.readline().split()[-1])
-                    fields = measurements.readline().split()
-                    stats[label]['n'] = int(fields.pop(0))
-                    stats[label]['m'] = int(fields.pop(0))
-                    stats[label]['maxlevel'] = int(fields.pop(0))
-                for line in measurements:
-                    fields = line.split()
-                    value = fields[-1]
-                    descr = ' '.join(fields[:-1])
-                    if '.stats' not in filename: # layers or cc
-                        descr = 'lvl' + descr.replace(' ', '')                        
-                    if 'cc n ' in line:
-                        ccID += 1
-                        sID = 'cc n {:d}'.format(ccID)
-                        header.add(sID)
-                        stats[label][sID] = fields[2]
-                        sID = 'cc m {:d}'.format(ccID)
-                        header.add(sID)                        
-                        stats[label][sID] = value
-                    elif 'cc' in line and '.stats' in filename:
-                        sID = '{:s} {:d}'.format(descr, ccID)
-                        header.add(sID)
-                        stats[label][sID] = value
-                    elif 'seconds' in line:
-                        header.add('proctime')
-                        stats[label]['proctime'] = float(fields[0])
-                    else:
-                        header.add(descr)
-                        stats[label][descr] = value
-hdr = list(header)
-print('Problem,ms,stepcount,' + ','.join(hdr))
-for label in stats:
-    s = ','.join([str(stats[label].get(h, 'NA')) for h in hdr])
-    print('{:s},{:d},{:d},{:s}'.format(label, times[label], steps[label], s))
+                for records in measurements:
+                    fields = records.split()
+                    kind= fields.pop(0)
+                    level = str(int(fields.pop(0)) + 1) # they start at 0 originally, now they start at 1
+                    stage = stages.get(kind + level, None)
+                    if stage is not None: # in case characterizations went further than the limit
+                        descr = fields.pop(0)
+                        value = float(fields.pop(0))
+                        sh.add(descr)
+                        stats[problem][stage][descr] = value
+shl = list(sh)
+print('Problem,{:s},Stage,{:s}'.format(','.join(oh), ','.join(shl)))
+for problem in stats:
+    shared = ','.join([stats[problem][h] for h in oh])
+    for stage in range(1, 6):
+        specific = ','.join([str(stats[problem][stage].get(h, 'NA')) for h in shl])
+        print(f'{problem},{shared},{stage},{specific}')

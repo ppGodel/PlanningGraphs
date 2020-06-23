@@ -17,107 +17,113 @@ as.numeric.factor <- function(x) {
 
 minObs = 100
 minUniq = 5
-redoIntro = FALSE # already up to date
 redoExpl = TRUE
 redrawScatter = TRUE
 redrawCorr = TRUE
 remakeFormula = TRUE
 
-all = read.csv('IPCResults.csv') # IPC results
-raw = read.csv('stats.csv') # our measurements
-combo = merge(x = all, y = raw, by = 'Problem')
+data = read.csv('stats.csv')
+print(summary(data$Comp))
 
-print('IPC results')
-print(summary(all$comp))
-print('Combined with measurements')
-print(summary(combo$comp))
-
-if (redoIntro) {
-    for (co in levels(all$comp)) {
-        subset = all %>% filter(comp == co)
-        subset =  droplevels(subset)
-        count = length(levels(subset$Dom))
-        p = ggplot(subset, aes(x = Dom, y = Time, fill = Dom))
-        p = p + geom_violin(trim = FALSE) + geom_boxplot(width=0.1)
-        p = p + xlab('Problem domain') + ylab('Reported runtime in milliseconds')
-        p = p + theme(legend.position="none")
-        p = p + scale_y_continuous(trans='log2', labels = comma)
-        p = p + theme_bw() # no gray background
-        filename = sprintf('domains_%s.pdf', co)
-        ggsave(filename, width = 3 * count, height = 10, units = "cm")
-        count = length(levels(subset$Planner))
-        p = ggplot(subset, aes(x = Planner, y = Time, fill = Planner))
-        p = p + geom_violin(trim = FALSE) + geom_boxplot(width=0.1)
-        p = p + xlab('Planner') + ylab('Reported runtime in milliseconds')
-        p = p + theme(legend.position="none")
-        p = p + scale_y_continuous(trans='log2', labels = comma)
-        p = p + theme_bw() # no gray background
-        filename = sprintf('planners_%s.pdf', co)
-        ggsave(filename, width = 10 * log(count), height = 12, units = "cm")
-        qdw = length(levels(subset$Dom))
-        qdh = length(levels(subset$Planner))
-        count = 3 * qdh * qdw
-        qd = data.frame(Dom = rep("", count), Planner = rep("", count),
-                        quantile = rep(NA, count),
-                        value = rep(NA, count),
-                        stringsAsFactors=FALSE)
-        pos = 1
-        for (d in levels(subset$Dom)) {
-            subset2 = subset %>% filter(Dom == d)
-            for (p in levels(subset2$Planner)) {
-                subset3 = subset2 %>% filter(Planner == p)
-                times = subset3$Time
-                times = times[!is.na(times)]
-                sumd = summary(times)
-                qd[pos, ] = list(d, p, 25, as.numeric(sumd[2])) # first
-                pos = pos + 1
-                qd[pos, ] = list(d, p, 50, as.numeric(sumd[3])) # second
-                pos = pos + 1
-                qd[pos, ] = list(d, p, 75, as.numeric(sumd[5])) # third
-                pos = pos + 1
-            }
-        }
-        qd = qd[1:(pos-1),]
-        low = min(qd$value[!is.na(qd$value)])
-        high =max(qd$value[!is.na(qd$value)])
-        lp = floor(log10(low))
-        hp = ceiling(log10(high))
-        br = 10^seq(lp, hp, by = 1)
-        lims = c(10^lp, 10^hp)
-        p = ggplot(qd, aes(x = Dom, y = Planner, fill = value)) +
-            facet_grid(cols = vars(quantile)) +
-            geom_tile() +
-            scale_fill_viridis(trans = 'log10', option = "inferno",
-                               discrete = FALSE, na.value = 'gray',
-                               limits = lims, breaks = br) +
-            xlab('Problem domain') +
-            labs(fill = 'Quantile')
-        theme_bw()
-        filename = sprintf('heatmap_%s.pdf', co)
-        ggsave(filename, width = 2 * 3 * qdw, height = 2 * qdh, units = "cm")
-    }
-
-    p = ggplot(combo, aes(x = n, y = Time))
-    p = p + geom_point(aes(color = Dom, shape = Planner, size = m),
-                       alpha = 0.6, position = position_jitter(w = 0.05, h = 0))
-    p = p + scale_shape_manual(values=1:nlevels(combo$Planner))
-    p = p + xlab('Graph order') + ylab('Runtime')
-    p = p + labs(color = 'Domain', shape = 'Planner', size  = 'Graph size')
-    p = p + theme(legend.box = "horizontal")
-    p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
+for (co in levels(data$Comp)) {
+    subset = data %>% filter(Comp == co)
+    subset =  droplevels(subset)
+    count = length(levels(subset$Dom))
+    p = ggplot(subset, aes(x = Dom, y = Time, fill = Dom))
+    p = p + geom_violin(trim = FALSE) + geom_boxplot(width=0.1)
+    p = p + xlab('Problem domain') + ylab('Reported runtime in milliseconds')
+    p = p + theme(legend.position="none")
+    p = p + scale_y_continuous(trans='log2', labels = comma)
     p = p + theme_bw() # no gray background
-    ggsave("scatter.pdf", width = 30, height = 20, units = "cm")
+    filename = sprintf('domains_%s.pdf', co)
+    ggsave(filename, width = 3 * count, height = 10, units = "cm")
+    count = length(levels(subset$Planner))
+    p = ggplot(subset, aes(x = Planner, y = Time, fill = Planner))
+    p = p + geom_violin(trim = FALSE) + geom_boxplot(width=0.1)
+    p = p + xlab('Planner') + ylab('Reported runtime in milliseconds')
+    p = p + theme(legend.position="none")
+    p = p + scale_y_continuous(trans='log2', labels = comma)
+    p = p + theme_bw() # no gray background
+    filename = sprintf('planners_%s.pdf', co)
+    ggsave(filename, width = 10 * log(count), height = 12, units = "cm")
+    qdw = length(levels(subset$Dom))
+    qdh = length(levels(subset$Planner))
+    count = 3 * qdh * qdw
+    qd = data.frame(Dom = rep("", count), Planner = rep("", count),
+                    quantile = rep(NA, count),
+                    value = rep(NA, count),
+                    stringsAsFactors=FALSE)
+    pos = 1
+    for (d in levels(subset$Dom)) {
+        subset2 = subset %>% filter(Dom == d)
+        for (p in levels(subset2$Planner)) {
+            subset3 = subset2 %>% filter(Planner == p)
+            times = subset3$Time
+            times = times[!is.na(times)]
+            sumd = summary(times)
+            qd[pos, ] = list(d, p, 25, as.numeric(sumd[2])) # first
+            pos = pos + 1
+            qd[pos, ] = list(d, p, 50, as.numeric(sumd[3])) # second
+            pos = pos + 1
+            qd[pos, ] = list(d, p, 75, as.numeric(sumd[5])) # third
+            pos = pos + 1
+        }
+    }
+    qd = qd[1:(pos-1),]
+    low = min(qd$value[!is.na(qd$value)])
+    high =max(qd$value[!is.na(qd$value)])
+    lp = floor(log10(low))
+    hp = ceiling(log10(high))
+    br = 10^seq(lp, hp, by = 1)
+    lims = c(10^lp, 10^hp)
+    p = ggplot(qd, aes(x = Dom, y = Planner, fill = value)) +
+        facet_grid(cols = vars(quantile)) +
+        geom_tile() +
+        scale_fill_viridis(trans = 'log10', option = "inferno",
+                           discrete = FALSE, na.value = 'gray',
+                           limits = lims, breaks = br) +
+        xlab('Problem domain') +
+        labs(fill = 'Quantile')
+    theme_bw()
+    filename = sprintf('heatmap_%s.pdf', co)
+    ggsave(filename, width = 2 * 3 * qdw, height = 2 * qdh, units = "cm")
 }
 
-results = combo %>% filter(comp == 'IPC1998') # leave out the IPC 1998 to use in the validation phase
-results = combo # TODO: actually filter them once the new characterizations are done
+library(hash)
+sh = hash()
+for (stage in 1:5) {
+    stageData = data %>% filter(Stage == stage)
+    p = ggplot(stageData, aes(x = order, y = Time)) +
+        geom_point(aes(color = Dom, shape = Planner, size = size),
+                   alpha = 0.6, position = position_jitter(w = 0.05, h = 0)) +
+        scale_shape_manual(values=1:nlevels(data$Planner)) +
+        xlab(sprintf('Graph order in stage %d', stage)) + ylab('Total runtime') +
+        labs(color = 'Domain', shape = 'Planner', size  = sprintf('Graph size in stage %d', stage)) +
+        scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma) +
+        theme_bw()
+    if (stage < 5) {
+        sh[[toString(stage)]] = p + guides(color = FALSE, shape = FALSE) +
+            theme(legend.position = "top", legend.box = "horizontal")
+    } else {
+        sh[[toString(stage)]] = p + guides(size = guide_legend(order = 1),
+                                           color = guide_legend(order = 2),
+                                           shape = guide_legend(order = 3)) +
+            theme(legend.position = "right", legend.box = "vertical")
+    }
+}
+png("scatter.png", width = 2000, height = 600)
+grid.arrange(sh[["1"]], sh[["2"]], sh[["3"]], sh[["4"]], sh[["5"]], nrow = 1, widths = c(rep(1, 4), 1.3))
+dev.off()
+
+results = data %>% filter(Comp == 'IPC2000') # leave out the IPC 1998 to use in the validation phase
+print(summary(results$Comp))
 print(names(results))
 print(summary(results$Time))
 print(summary(results$n))
 print(summary(results$m))
 print(summary(results$stepcount))
 
-model = lm(log(Time + 1) ~ log(n) * log(m) * stepcount, data = results)
+model = lm(log(Time + 1) ~ log(order) * log(size) * Stage, data = results)
 s = summary(model)
 options(digits=3)
 sink('model.txt')
@@ -436,7 +442,7 @@ results$maxavgdegconnectivity = results$maxavgdegconnectivity / (results$n)^2
 results$maxeigenvectorcentrality = results$maxeigenvectorcentrality * (results$n)
 results$greedycolors = results$greedycolors / results$n
 print(summary(results$maxtriangles))
-print(summary(results$comp))
+print(summary(results$Comp))
 
 
 process <- function(df) {
@@ -513,6 +519,6 @@ s = summary(model)
 print(s)
 print(s$adj.r.squared)
 
-validation = combo %>% filter(comp == 'IPC2000') # use the IPC 2000 in the exploratory analysis
+validation = data %>% filter(comp == 'IPC2000') # use the IPC 2000 in the exploratory analysis
 
 
