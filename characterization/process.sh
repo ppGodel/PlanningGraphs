@@ -1,4 +1,4 @@
-timeout=300
+timeout=120
 find . -size  0 -print0 | xargs -0 rm -- # clean up empty files
 if ! test -f 'attempts_${timeout}.lst'; then
     touch attempts_${timeout}.lst
@@ -15,7 +15,7 @@ do
             echo $g 'does not finish within the current timeout'
         else
             echo 'processing' $g 'for' $timeout's max'
-            gtimeout ${timeout}s python3 process.py $f > $g.stats
+            gtimeout ${timeout}s python3 layers.py $f > $g.cc
             code=$?
             if [ "$code" -eq "124" ]; then
                 echo "interrupted" $g

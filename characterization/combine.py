@@ -4,13 +4,12 @@ times = dict()
 steps = dict()
 stats = dict()
 header = set()
-which = 'stats' if 'layers' not in argv else 'cc'
 with open('../IPCResults.csv') as data:
     data.readline() # header row
     for line in data:
         fields = line.split(',')
         label = fields[2]
-        filename = '{:s}.{:s}'.format(label, which) 
+        filename = '{:s}.cc'.format(label)
         if os.path.isfile(filename):
             times[label] = int(float(fields[3]))
             steps[label] = int(fields[4])
