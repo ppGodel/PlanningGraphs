@@ -8,6 +8,7 @@ suppressMessages(require(viridis))
 suppressMessages(require(corrplot))
 suppressMessages(require(psych))
 suppressMessages(require(data.table))
+suppressMessages(require(hash))
 
 options(scipen=10000)
 
@@ -23,6 +24,14 @@ redrawCorr = TRUE
 remakeFormula = TRUE
 
 data = read.csv('stats.csv')
+data$Planner = factor(data$Planner)
+data$Dom = factor(data$Dom)
+data$Comp = factor(data$Comp)
+data = data[data$order > 0,] # do not include unconcluded runs
+data = data[data$Stage <= 5,] # if more was extracted or characterized, do not include it
+data$Stage = factor(data$Stage)
+
+
 print(summary(data$Comp))
 
 for (co in levels(data$Comp)) {
@@ -89,17 +98,17 @@ for (co in levels(data$Comp)) {
     ggsave(filename, width = 2 * 3 * qdw, height = 2 * qdh, units = "cm")
 }
 
-library(hash)
 sh = hash()
 for (stage in 1:5) {
     stageData = data %>% filter(Stage == stage)
-    p = ggplot(stageData, aes(x = order, y = Time)) +
+    p = ggplot(stageData, aes(x = order, y = Time)) + ggtitle(sprintf('Stage %d', stage)) +
         geom_point(aes(color = Dom, shape = Planner, size = size),
                    alpha = 0.6, position = position_jitter(w = 0.05, h = 0)) +
         scale_shape_manual(values=1:nlevels(data$Planner)) +
-        xlab(sprintf('Graph order in stage %d', stage)) + ylab('Total runtime') +
-        labs(color = 'Domain', shape = 'Planner', size  = sprintf('Graph size in stage %d', stage)) +
-        scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma) +
+        xlab('Order') + ylab('Total runtime') +
+        labs(color = 'Domain', shape = 'Planner', size = 'Size') +
+        scale_x_continuous(trans = 'log2', labels = comma, limits = c(4, 512)) +
+        scale_y_continuous(trans='log2', labels = comma) +
         theme_bw()
     if (stage < 5) {
         sh[[toString(stage)]] = p + guides(color = FALSE, shape = FALSE) +
@@ -119,9 +128,9 @@ results = data %>% filter(Comp == 'IPC2000') # leave out the IPC 1998 to use in 
 print(summary(results$Comp))
 print(names(results))
 print(summary(results$Time))
-print(summary(results$n))
-print(summary(results$m))
-print(summary(results$stepcount))
+print(summary(results$order))
+print(summary(results$size))
+print(summary(results$Steps))
 
 model = lm(log(Time + 1) ~ log(order) * log(size) * Stage, data = results)
 s = summary(model)
@@ -143,16 +152,16 @@ regular = filter(results, ((results$predicted >= results$Time / 2) & (results$pr
 cat(c('regular', dim(regular)[1]), '\n')
 
 if (redoExpl) {
-   p = ggplot(results, aes(x=n, y=Time)) # basic measures: predicted versus unexplained runtime
-   p = p + geom_point(aes(size = m, color = stepcount), alpha = 0.2)
+   p = ggplot(results, aes(x = order, y = Time)) # basic measures: predicted versus unexplained runtime
+   p = p + geom_point(aes(size = size, color = Planner), alpha = 0.2)
    p = p + xlab('Number of nodes') + ylab('Reported runtime in milliseconds')
-   p = p + labs(color = 'Number of levels', size  = 'Number of edges')
+   p = p + labs(color = 'Number of levels', size = 'Number of edges')
    p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
 #   p = p + xlim(1, 2000) + ylim(1, 3000000)
    p = p + scale_color_gradient(low="blue", high="red")
    p = p + theme_bw() # no gray background
    ggsave("defaults.pdf", width = 20, height = 20, units = "cm")
-   p = ggplot(results, aes(x=n, y=predicted)) + geom_point(aes(size = m, color = stepcount, shape = Dom), alpha = 0.5)
+   p = ggplot(results, aes(x = order, y=predicted)) + geom_point(aes(size = size, color = Planner, shape = Dom), alpha = 0.5)
    p = p + scale_shape_manual(values=1:nlevels(results$Dom))
    p = p + xlab('Number of nodes') + ylab('Predicted runtime in milliseconds')
    p = p + labs(color = 'Number of levels', size  = 'Number of edges', shape = 'Problem domain')
@@ -161,7 +170,7 @@ if (redoExpl) {
    p = p + scale_color_gradient(low="blue", high="red")
    p = p + theme_bw() # no gray background
    ggsave("explained.pdf", width = 20, height = 20, units = "cm")
-   p = ggplot(results, aes(x=n, y=unexplained)) + geom_point(aes(size = m, color = stepcount, shape = Dom), alpha = 0.5)
+   p = ggplot(results, aes(x = order, y=unexplained)) + geom_point(aes(size = size, color = Planner, shape = Dom), alpha = 0.5)
    p = p + scale_shape_manual(values=1:nlevels(results$Dom))
    p = p + xlab('Number of nodes') + ylab('Unexplained runtime in milliseconds')
    p = p + labs(color = 'Number of levels', size  = 'Number of edges', shape = 'Problem domain')
@@ -173,7 +182,7 @@ if (redoExpl) {
    ggsave("unexplained.pdf", width = 20, height = 20, units = "cm")
    vb = seq(250, 1250, 250)
    eb = seq(20000, 60000, 20000)
-   p = ggplot(easy, aes(x=Time, y=-unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
+   p = ggplot(easy, aes(x = Time, y=-unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
    p = p + xlab('Actual runtime in milliseconds') + ylab('"Missing" runtime in milliseconds')
    p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
    p = p + scale_x_continuous(trans='log2', labels = comma)
@@ -182,7 +191,7 @@ if (redoExpl) {
    p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
    p = p + theme_bw() # no gray background
    ggsave("easy.pdf", width = 15, height = 17, units = "cm")
-   p = ggplot(hard, aes(x=Time, y=unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
+   p = ggplot(hard, aes(x = Time, y=unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
    p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
    p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
    p = p + scale_x_continuous(trans='log2', labels = comma)
@@ -191,7 +200,7 @@ if (redoExpl) {
    p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
    p = p + theme_bw() # no gray background
    ggsave("hard.pdf", width = 15, height = 17, units = "cm")
-   p = ggplot(regular, aes(x=Time, y=unexplained)) + geom_point(aes(size = m, color = n), alpha = 0.5)
+   p = ggplot(regular, aes(x=Time, y=unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
    p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
    p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
    p = p + scale_x_continuous(trans='log2', labels = comma)
@@ -201,24 +210,24 @@ if (redoExpl) {
    ggsave("regular.pdf", width = 15, height = 17, units = "cm")
 }
 
+                                        # TO BE DONE: violin plots for characteristic over the three groups
+
+
 vars = ncol(results)
 results = filter(results, !is.na(results$ms))
-results$Planner = factor(results$Planner)
-results$Dom = factor(results$Dom)
 skip = c('ms', 'n', 'm', 'proctime',
            'comp', 'Problem', 'Planner',
            'Domain', 'Dom', 'Time',
-           'Steps', 'stepcount') # not potential structural measures
+           'Steps') # not potential structural measures
 listing = names(results)
 targets = listing[!listing  %in% skip]
 
 if (redrawScatter) {
     cutoff = 200000
-    tedious = filter(results, results$ms > cutoff)
+    tedious = filter(results, results$Time > cutoff)
     cat(dim(tedious))
-    quit()
-    order = tedious$n
-    size = tedious$m
+    order = tedious$order
+    size = tedious$size
     runtime = tedious$unexplained # study ONLY the unexplained runtime
     planner = tedious$Planner
     domain = tedious$Dom
@@ -254,12 +263,10 @@ if (redrawScatter) {
             ylab(target) +
             geom_text_repel(tedious, mapping = aes(label = Problem), size = ts, hjust = 0, nudge_x = 5)
         legend = cowplot::get_legend(p0)
-        png(sprintf("s_nmt_%d.png", s), width = 1200, height = 1200)
+        png(sprintf("s_nmt_%s.png", target), width = 1200, height = 1200)
         grid.arrange(p1, p2, p3, legend, top = target)
         dev.off()
     }
-    planner = factor(results$Planner)
-    domain = factor(results$Dom)
     shapes = 1:nlevels(results$Dom)
     order = results$n
     size = results$m

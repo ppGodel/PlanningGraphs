@@ -47,7 +47,7 @@ with open(name) as data:
         Ei = E[l]['m'] + E[l]['d']
         internal = L.edge_subgraph(Ei)
         targets = [('int', internal)]
-        if l < maxLevel:
+        if l < maxLevel - 1:
             both = list(V[l + 1] | V[l])
             T = G.subgraph(both)
             Et = list(E[l]['i'])
@@ -55,11 +55,12 @@ with open(name) as data:
             targets.append(('trans', T))
         for (label, target) in targets:
             n = len(target)
-            print(l, 'order', n)
-            print(l, 'size', target.number_of_edges())
+            print(label, l, 'order', n)
+            print(label, l, 'size', target.number_of_edges())
             isolated = len(list(nx.isolates(target)))
-            print(l, 'isolated', isolated)
-            if n > minimumOrder:
+            print(label, l, 'isolated', isolated)
+            if n >= minimumOrder:
+                ccID = 0
                 print(label, l, 'maxBetwCent', max(nx.betweenness_centrality(target).values()))
                 print(label, l, 'avgClust', algs.average_clustering(target))
                 print(label, l, 'vertexCover', len(approx.vertex_cover.min_weighted_vertex_cover(target)))
@@ -73,7 +74,6 @@ with open(name) as data:
                 print(label, l, 'maxTriangles', max(algs.cluster.triangles(target).values()))
                 print(label, l, 'trans', algs.cluster.transitivity(target))
                 print(label, l, 'greedyCol', len(set(algs.coloring.greedy_color(target).values())))
-                ccID = 0
                 smallest = n
                 biggest = 0
                 for CC in nx.connected_components(target):
@@ -82,7 +82,6 @@ with open(name) as data:
                         smallest = k
                     if k > biggest:
                         biggest = k
-                    ccID += 1
                     S = target.subgraph(CC)
                     n = len(S)
                     if n > minimumOrder:
@@ -94,6 +93,7 @@ with open(name) as data:
                         print(label, l, 'cc{:d}Cent {:f}'.format(ccID, 100 * len(nx.center(S)) / n))
                         print(label, l, 'cc{:d}Periph {:f}'.format(ccID, 100 * len(nx.periphery(S)) / n))
                         print(label, l, 'cc{:d}Dens {:f}'.format(ccID, nx.density(S)))
+                    ccID += 1
                 print(label, l, 'ccCount', ccID)
                 print(label, l, 'ccMin', smallest)
                 print(label, l, 'ccMax', biggest)

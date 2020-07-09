@@ -25,7 +25,7 @@ with open('../IPCResults.csv') as data:
             with open(filename) as measurements:
                 for records in measurements:
                     fields = records.split()
-                    kind= fields.pop(0)
+                    kind = fields.pop(0)
                     level = str(int(fields.pop(0)) + 1) # they start at 0 originally, now they start at 1
                     stage = stages.get(kind + level, None)
                     if stage is not None: # in case characterizations went further than the limit
@@ -33,6 +33,9 @@ with open('../IPCResults.csv') as data:
                         value = float(fields.pop(0))
                         sh.add(descr)
                         stats[problem][stage][descr] = value
+                    else:
+                        print(line)
+                        quit()
 shl = list(sh)
 print('Problem,{:s},Stage,{:s}'.format(','.join(oh), ','.join(shl)))
 for problem in stats:
