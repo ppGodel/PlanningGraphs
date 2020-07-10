@@ -8,7 +8,7 @@ suppressMessages(require(viridis))
 suppressMessages(require(corrplot))
 suppressMessages(require(psych))
 suppressMessages(require(data.table))
-suppressMessages(require(hash))
+suppressMessages(require(gdata))
 
 options(scipen=10000)
 
@@ -20,6 +20,7 @@ minObs = 100
 minUniq = 5
 redoExpl = TRUE
 redrawScatter = TRUE
+redrawViolin = TRUE
 redrawCorr = TRUE
 remakeFormula = TRUE
 
@@ -30,7 +31,6 @@ data$Comp = factor(data$Comp)
 data = data[data$order > 0,] # do not include unconcluded runs
 data = data[data$Stage <= 5,] # if more was extracted or characterized, do not include it
 data$Stage = factor(data$Stage)
-
 
 print(summary(data$Comp))
 
@@ -210,17 +210,45 @@ if (redoExpl) {
    ggsave("regular.pdf", width = 15, height = 17, units = "cm")
 }
 
-                                        # TO BE DONE: violin plots for characteristic over the three groups
-
-
 vars = ncol(results)
 results = filter(results, !is.na(results$ms))
 skip = c('ms', 'n', 'm', 'proctime',
-           'comp', 'Problem', 'Planner',
-           'Domain', 'Dom', 'Time',
-           'Steps') # not potential structural measures
+           'Comp', 'Problem', 'Planner',
+           'Domain', 'Dom', 'Time', 'Stage',
+           'Steps', 'unexplained', 'modpred', 'predicted') # not potential structural measures
 listing = names(results)
 targets = listing[!listing  %in% skip]
+
+# TO BE DONE: this should probably happen by stage
+alpha = 0.01
+if (redrawViolin) {
+    for (target in targets) {
+        values = list(easy[[target]], regular[[target]], hard[[target]])
+        t = data.frame(Value = numeric(), Class = numeric())
+        for (i in 1:3) {
+            for (value in values[[i]]) {
+                t = rbind(t, c(value, i))
+            }
+        }
+        names(t) = c("Value", "Class")
+        t$Class = as.factor(t$Class)
+        t$Class = recode_factor(t$Class, "1" = "easy", "2" = "regular", "3" = "hard")
+        t = drop.levels(t[complete.cases(t), ]) # skip NA and reduce factors
+        cat(target, summary(t$Class), '\n')
+        if (length(levels(t$Class)) > 1 && dim(t)[1] > 30) {
+            kwt = kruskal.test(t$Value~t$Class)
+            p = kwt$p.value
+            if (!is.nan(p) && p < alpha) { # differently distributed
+                vp = ggplot(t, aes(x=Class, y=Value, fill=Class)) +
+                    labs(title = sprintf('Characteristic %s (p = %.5f)', target, p)) +
+                    geom_violin(trim=FALSE) +
+                    scale_fill_manual(values=c("#66ff66", "#6666ff", "#ff6666"))
+                ggsave(sprintf("violin_%s.pdf", target), width = 12, height = 7, units = "cm")
+            }
+        }
+    }
+}
+
 
 if (redrawScatter) {
     cutoff = 200000
@@ -526,6 +554,6 @@ s = summary(model)
 print(s)
 print(s$adj.r.squared)
 
-validation = data %>% filter(comp == 'IPC2000') # use the IPC 2000 in the exploratory analysis
+validation = data %>% filter(Comp == 'IPC2000') # use the IPC 2000 in the exploratory analysis
 
 
