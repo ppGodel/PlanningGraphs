@@ -8,9 +8,11 @@ suppressMessages(require(viridis))
 suppressMessages(require(corrplot))
 suppressMessages(require(psych))
 suppressMessages(require(data.table))
+suppressMessages(require(hash))
 suppressMessages(require(gdata))
 
 options(scipen=10000)
+options(show.error.locations = TRUE)
 
 as.numeric.factor <- function(x) {
     as.numeric(levels(x))[x]
@@ -152,107 +154,129 @@ regular = filter(results, ((results$predicted >= results$Time / 2) & (results$pr
 cat(c('regular', dim(regular)[1]), '\n')
 
 if (redoExpl) {
-   p = ggplot(results, aes(x = order, y = Time)) # basic measures: predicted versus unexplained runtime
-   p = p + geom_point(aes(size = size, color = Planner), alpha = 0.2)
-   p = p + xlab('Number of nodes') + ylab('Reported runtime in milliseconds')
-   p = p + labs(color = 'Number of levels', size = 'Number of edges')
-   p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
-#   p = p + xlim(1, 2000) + ylim(1, 3000000)
-   p = p + scale_color_gradient(low="blue", high="red")
-   p = p + theme_bw() # no gray background
-   ggsave("defaults.pdf", width = 20, height = 20, units = "cm")
-   p = ggplot(results, aes(x = order, y=predicted)) + geom_point(aes(size = size, color = Planner, shape = Dom), alpha = 0.5)
-   p = p + scale_shape_manual(values=1:nlevels(results$Dom))
-   p = p + xlab('Number of nodes') + ylab('Predicted runtime in milliseconds')
-   p = p + labs(color = 'Number of levels', size  = 'Number of edges', shape = 'Problem domain')
-   p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
-#   p = p + xlim(1, 2000) + ylim(1, 100000)
-   p = p + scale_color_gradient(low="blue", high="red")
-   p = p + theme_bw() # no gray background
-   ggsave("explained.pdf", width = 20, height = 20, units = "cm")
-   p = ggplot(results, aes(x = order, y=unexplained)) + geom_point(aes(size = size, color = Planner, shape = Dom), alpha = 0.5)
-   p = p + scale_shape_manual(values=1:nlevels(results$Dom))
-   p = p + xlab('Number of nodes') + ylab('Unexplained runtime in milliseconds')
-   p = p + labs(color = 'Number of levels', size  = 'Number of edges', shape = 'Problem domain')
-   p = p + scale_x_continuous(trans = 'log2', labels = comma)
-   p = p + scale_y_continuous(trans='log2', labels = comma)
-#   p = p + xlim(1, 2000) + ylim(1, 3000000)
-   p = p + scale_color_gradient(low="blue", high="red")
-   p = p + theme_bw() # no gray background
-   ggsave("unexplained.pdf", width = 20, height = 20, units = "cm")
-   vb = seq(250, 1250, 250)
-   eb = seq(20000, 60000, 20000)
-   p = ggplot(easy, aes(x = Time, y=-unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
-   p = p + xlab('Actual runtime in milliseconds') + ylab('"Missing" runtime in milliseconds')
-   p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
-   p = p + scale_x_continuous(trans='log2', labels = comma)
-   p = p + scale_y_continuous(trans='log2', labels = comma)
-#   p = p + xlim(1, 2000) + ylim(1, 3000000)
-   p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
-   p = p + theme_bw() # no gray background
-   ggsave("easy.pdf", width = 15, height = 17, units = "cm")
-   p = ggplot(hard, aes(x = Time, y=unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
-   p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
-   p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
-   p = p + scale_x_continuous(trans='log2', labels = comma)
-   p = p + scale_y_continuous(trans='log2', labels = comma)
-#   p = p + xlim(1, 2000) + ylim(1, 3000000)
-   p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
-   p = p + theme_bw() # no gray background
-   ggsave("hard.pdf", width = 15, height = 17, units = "cm")
-   p = ggplot(regular, aes(x=Time, y=unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
-   p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
-   p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
-   p = p + scale_x_continuous(trans='log2', labels = comma)
-#   p = p + xlim(1, 2000) + ylim(1, 3000000)
-   p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
-   p = p + theme_bw() # no gray background
-   ggsave("regular.pdf", width = 15, height = 17, units = "cm")
+    print("Expl started")
+    p = ggplot(results, aes(x = order, y = Time)) # basic measures: predicted versus unexplained runtime
+    p = p + geom_point(aes(color = size), alpha = 0.2)
+    p = p + xlab('Number of nodes') + ylab('Reported runtime in milliseconds')
+    p = p + labs(color = 'Number of levels', size = 'Number of edges')
+    p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans = 'log2', labels = comma)
+                                        #   p = p + xlim(1, 2000) + ylim(1, 3000000)
+    p = p + scale_color_gradient(low="blue", high="red")
+    p = p + theme_bw() # no gray background
+    ggsave("defaults.pdf", width = 20, height = 20, units = "cm")
+
+    print("1")
+
+    p = ggplot(results, aes(x = order, y = predicted)) + geom_point(aes(size = size, color = Planner, shape = Dom), alpha = 0.5)
+    p = p + scale_shape_manual(values=1:nlevels(results$Dom))
+    p = p + xlab('Number of nodes') + ylab('Predicted runtime in milliseconds')
+    p = p + labs(color = 'Planner', size  = 'Number of edges', shape = 'Problem domain')
+    p = p + scale_x_continuous(trans = 'log2', labels = comma) + scale_y_continuous(trans='log2', labels = comma)
+                                        #   p = p + xlim(1, 2000) + ylim(1, 100000)
+    p = p + theme_bw() # no gray background
+    ggsave("explained.pdf", width = 20, height = 20, units = "cm")
+
+    print("2")
+
+    p = ggplot(results, aes(x = order, y = unexplained)) + geom_point(aes(size = size, color = Planner, shape = Dom), alpha = 0.5)
+    p = p + scale_shape_manual(values=1:nlevels(results$Dom))
+    p = p + xlab('Number of nodes') + ylab('Unexplained runtime in milliseconds')
+    p = p + labs(color = 'Planner', size  = 'Number of edges', shape = 'Problem domain')
+    p = p + scale_x_continuous(trans = 'log2', labels = comma)
+    p = p + scale_y_continuous(trans = 'log2', labels = comma)
+                                        #   p = p + xlim(1, 2000) + ylim(1, 3000000)
+    p = p + theme_bw() # no gray background
+    ggsave("unexplained.pdf", width = 20, height = 20, units = "cm")
+
+    print("3")
+
+    vb = seq(250, 1250, 250)
+    eb = seq(20000, 60000, 20000)
+    p = ggplot(easy, aes(x = Time, y=-unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
+    p = p + xlab('Actual runtime in milliseconds') + ylab('"Missing" runtime in milliseconds')
+    p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
+    p = p + scale_x_continuous(trans='log2', labels = comma)
+    p = p + scale_y_continuous(trans='log2', labels = comma)
+                                        #   p = p + xlim(1, 2000) + ylim(1, 3000000)
+    p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
+    p = p + theme_bw() # no gray background
+    ggsave("easy.pdf", width = 15, height = 17, units = "cm")
+
+    print("4")
+
+    p = ggplot(hard, aes(x = Time, y=unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
+    p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
+    p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
+    p = p + scale_x_continuous(trans='log2', labels = comma)
+    p = p + scale_y_continuous(trans='log2', labels = comma)
+                                        #   p = p + xlim(1, 2000) + ylim(1, 3000000)
+    p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
+    p = p + theme_bw() # no gray background
+    ggsave("hard.pdf", width = 15, height = 17, units = "cm")
+
+    print("5")
+
+    p = ggplot(regular, aes(x=Time, y=unexplained)) + geom_point(aes(size = size, color = order), alpha = 0.5)
+    p = p + xlab('Actual runtime in milliseconds') + ylab('Unexplained runtime in milliseconds')
+    p = p + labs(size  = 'Number of edges', color = 'Number of vertices')
+    p = p + scale_x_continuous(trans='log2', labels = comma)
+                                        #   p = p + xlim(1, 2000) + ylim(1, 3000000)
+    p = p + scale_color_gradient(low="blue", high="red", breaks = vb) + scale_size(breaks = eb)
+    p = p + theme_bw() # no gray background
+    ggsave("regular.pdf", width = 15, height = 17, units = "cm")
+    print("Expl done")
 }
 
 vars = ncol(results)
-results = filter(results, !is.na(results$ms))
-skip = c('ms', 'n', 'm', 'proctime',
+results = filter(results, !is.na(results$Time))
+skip = c('order', 'size', 'proctime',
            'Comp', 'Problem', 'Planner',
            'Domain', 'Dom', 'Time', 'Stage',
            'Steps', 'unexplained', 'modpred', 'predicted') # not potential structural measures
 listing = names(results)
 targets = listing[!listing  %in% skip]
 
-# TO BE DONE: this should probably happen by stage
 alpha = 0.01
 if (redrawViolin) {
-    for (target in targets) {
-        values = list(easy[[target]], regular[[target]], hard[[target]])
-        t = data.frame(Value = numeric(), Class = numeric())
-        for (i in 1:3) {
-            for (value in values[[i]]) {
-                t = rbind(t, c(value, i))
+    for (s in 1:5) {
+        es = easy[easy$Stage == s,]
+        rs = regular[regular$Stage == s,]
+        hs = hard[hard$Stage == s,]
+        for (target in targets) {
+            values = list(es[[target]], rs[[target]], hs[[target]])
+            t = data.frame(Value = numeric(), Class = numeric())
+            for (i in 1:3) {
+                for (value in values[[i]]) {
+                    t = rbind(t, c(value, i))
+                }
             }
-        }
-        names(t) = c("Value", "Class")
-        t$Class = as.factor(t$Class)
-        t$Class = recode_factor(t$Class, "1" = "easy", "2" = "regular", "3" = "hard")
-        t = drop.levels(t[complete.cases(t), ]) # skip NA and reduce factors
-        cat(target, summary(t$Class), '\n')
-        if (length(levels(t$Class)) > 1 && dim(t)[1] > 30) {
-            kwt = kruskal.test(t$Value~t$Class)
-            p = kwt$p.value
-            if (!is.nan(p) && p < alpha) { # differently distributed
-                vp = ggplot(t, aes(x=Class, y=Value, fill=Class)) +
-                    labs(title = sprintf('Characteristic %s (p = %.5f)', target, p)) +
-                    geom_violin(trim=FALSE) +
-                    scale_fill_manual(values=c("#66ff66", "#6666ff", "#ff6666"))
-                ggsave(sprintf("violin_%s.pdf", target), width = 12, height = 7, units = "cm")
+            names(t) = c("Value", "Class")
+            t$Class = as.factor(t$Class)
+            t$Class = recode_factor(t$Class, "1" = "easy", "2" = "regular", "3" = "hard")
+            t$Class = ordered(t$Class, levels = c("easy", "regular", "hard"))
+            t = t[complete.cases(t),] # skip NA
+            cat(s, target, summary(t$Class), '\n')
+            # drop.levels
+            if (length(levels(t$Class)) > 1 && dim(t)[1] > 30) {
+                kwt = kruskal.test(t$Value~t$Class)
+                p = kwt$p.value
+                if (!is.nan(p) && p < alpha) { # differently distributed
+                    vp = ggplot(t, aes(x=Class, y=Value, fill=Class)) +
+                        labs(title = sprintf('Characteristic %s at stage %d (p = %.5f)', target, s, p)) +
+                        geom_violin(trim=FALSE) +
+                        scale_fill_manual(values=c("#66ff66", "#6666ff", "#ff6666"))
+                    ggsave(sprintf("violin_%s_%d.pdf", target, s), width = 14, height = 7, units = "cm")
+                }
             }
         }
     }
+    print("Violin done")
 }
-
-
+quit()
 if (redrawScatter) {
+    print("Scatter started")
     cutoff = 200000
-    tedious = filter(results, results$Time > cutoff)
+    tedious = results[results$Time > cutoff,]
     cat(dim(tedious))
     order = tedious$order
     size = tedious$size
@@ -556,4 +580,4 @@ print(s$adj.r.squared)
 
 validation = data %>% filter(Comp == 'IPC2000') # use the IPC 2000 in the exploratory analysis
 
-
+traceback()
