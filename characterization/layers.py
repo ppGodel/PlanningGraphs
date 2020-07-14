@@ -61,19 +61,22 @@ with open(name) as data:
             print(label, l, 'isolated', isolated)
             if n >= minimumOrder:
                 ccID = 0
-                print(label, l, 'maxBetwCent', max(nx.betweenness_centrality(target).values()))
+                for (cl, char) in [('BetwCent', nx.betweenness_centrality),
+                                   ('AvgDegConn', algs.assortativity.average_degree_connectivity),
+                                   ('EigCentr', algs.centrality.eigenvector_centrality),
+                                   ('CloseCentr', algs.centrality.closeness_centrality),
+                                   ('LoadCentr', nx.algorithms.centrality.load_centrality),
+                                   ('Triangles', algs.cluster.triangles)]:
+                    v = list(char(target).values())
+                    for (prefix, selector) in [('max', max), ('min', min), ('avg', np.mean), ('med', np.median)]:
+                        print(label, l, prefix + cl, selector(v))
                 print(label, l, 'avgClust', algs.average_clustering(target))
                 print(label, l, 'vertexCover', len(approx.vertex_cover.min_weighted_vertex_cover(target)))
-                if isolated == 0:
-                    print(label, l, 'edgeCover', len(algs.covering.min_edge_cover(target)))
                 print(label, l, 'degAssort', algs.assortativity.degree_assortativity_coefficient(target))
-                print(label, l, 'maxAvgDegConn', max(algs.assortativity.average_degree_connectivity(target).values()))
-                print(label, l, 'maxEigCentr', max(algs.centrality.eigenvector_centrality(target).values()))
-                print(label, l, 'maxCloseCentr', max(algs.centrality.closeness_centrality(target).values()))
-                print(label, l, 'maxLoadCentr', max(nx.algorithms.centrality.load_centrality(target).values()))
-                print(label, l, 'maxTriangles', max(algs.cluster.triangles(target).values()))
                 print(label, l, 'trans', algs.cluster.transitivity(target))
                 print(label, l, 'greedyCol', len(set(algs.coloring.greedy_color(target).values())))
+                if isolated == 0:
+                    print(label, l, 'edgeCover', len(algs.covering.min_edge_cover(target)))
                 smallest = n
                 biggest = 0
                 for CC in nx.connected_components(target):
@@ -89,10 +92,12 @@ with open(name) as data:
                         print(label, l, 'cc{:d}M {:d}'.format(ccID, S.number_of_edges()))
                         print(label, l, 'cc{:d}Rad {:d}'.format(ccID, nx.radius(S)))
                         print(label, l, 'cc{:d}Diam {:d}'.format(ccID, nx.diameter(S)))
-                        print(label, l, 'cc{:d}MaxEcc {:d}'.format(ccID, max(nx.eccentricity(S).values())))
                         print(label, l, 'cc{:d}Cent {:f}'.format(ccID, 100 * len(nx.center(S)) / n))
                         print(label, l, 'cc{:d}Periph {:f}'.format(ccID, 100 * len(nx.periphery(S)) / n))
                         print(label, l, 'cc{:d}Dens {:f}'.format(ccID, nx.density(S)))
+                        v = list(nx.eccentricity(S).values())
+                        for (prefix, selector) in [('max', max), ('min', min), ('avg', np.mean), ('med', np.median)]:
+                            print(label, l, f'cc{ccID}{prefix}Ecc', selector(v))
                     ccID += 1
                 print(label, l, 'ccCount', ccID)
                 print(label, l, 'ccMin', smallest)
