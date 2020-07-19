@@ -1,4 +1,4 @@
-Planner,Dom,Problem,Time,Steps,comp
+Planner,Dom,Problem,Time,Steps,Comp
 blackbox,gripper,strips-gripper-x-1,113,11,IPC1998
 hsp,gripper,strips-gripper-x-1,2007,13,IPC1998
 ipp,gripper,strips-gripper-x-1,50,15,IPC1998

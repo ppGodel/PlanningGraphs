@@ -1,0 +1,146 @@
+
+Call:
+lm(formula = as.formula(formula), data = df, na.action = na.exclude)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-356053  -95570  -32494   24491 1362331 
+
+Coefficients:
+                           Estimate Std. Error t value Pr(>|t|)    
+(Intercept)              -7.853e+05  6.596e+05  -1.191 0.234298    
+m                        -2.424e+01  7.770e+00  -3.120 0.001898 ** 
+maxavgdegconnectivity     1.929e+02  1.498e+03   0.129 0.897548    
+facts                     1.245e+06  3.881e+05   3.208 0.001407 ** 
+avgclustering             9.017e+05  1.562e+05   5.774 1.25e-08 ***
+greedycolors             -2.022e+06  3.235e+05  -6.250 7.83e-10 ***
+edgecoverorder            1.325e+06  1.274e+06   1.040 0.298798    
+maxeigenvectorcentrality -5.822e+03  1.708e+03  -3.409 0.000696 ***
+maxtriangles              2.183e+04  3.351e+03   6.514 1.56e-10 ***
+maxavgdegreeconnectivity -2.949e+07  7.456e+06  -3.955 8.57e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 224600 on 595 degrees of freedom
+  (5 observations deleted due to missingness)
+Multiple R-squared:  0.2491,	Adjusted R-squared:  0.2377 
+F-statistic: 21.93 on 9 and 595 DF,  p-value: < 2.2e-16
+
+[1] "ms ~ m * maxavgdegconnectivity * facts * avgclustering * greedycolors * edgecoverorder * maxeigenvectorcentrality * maxtriangles * maxavgdegreeconnectivity"
+                                                               Df    Sum Sq   Mean Sq  F value   Pr(>F)    
+m                                                               1 6.036e+11 6.036e+11  129.877  < 2e-16 ***
+maxavgdegconnectivity                                           1 7.507e+11 7.507e+11  161.541  < 2e-16 ***
+facts                                                           1 8.882e+11 8.882e+11  191.131  < 2e-16 ***
+avgclustering                                                   1 3.945e+10 3.945e+10    8.488 0.003738 ** 
+greedycolors                                                    1 1.109e+10 1.109e+10    2.386 0.123099    
+edgecoverorder                                                  1 2.128e+09 2.128e+09    0.458 0.498910    
+maxeigenvectorcentrality                                        1 4.893e+12 4.893e+12 1052.795  < 2e-16 ***
+maxtriangles                                                    1 1.979e+12 1.979e+12  425.743  < 2e-16 ***
+maxavgdegreeconnectivity                                        1 7.890e+11 7.890e+11  169.771  < 2e-16 ***
+m:maxavgdegconnectivity                                         1 1.296e+07 1.296e+07    0.003 0.957906    
+m:facts                                                         1 2.397e+11 2.397e+11   51.570 2.57e-12 ***
+maxavgdegconnectivity:facts                                     1 5.004e+11 5.004e+11  107.672  < 2e-16 ***
+m:avgclustering                                                 1 1.942e+10 1.942e+10    4.178 0.041480 *  
+maxavgdegconnectivity:avgclustering                             1 1.944e+08 1.944e+08    0.042 0.838007    
+facts:avgclustering                                             1 7.391e+10 7.391e+10   15.904 7.68e-05 ***
+m:greedycolors                                                  1 4.290e+09 4.290e+09    0.923 0.337103    
+maxavgdegconnectivity:greedycolors                              1 3.045e+11 3.045e+11   65.523 4.54e-15 ***
+facts:greedycolors                                              1 1.105e+12 1.105e+12  237.715  < 2e-16 ***
+avgclustering:greedycolors                                      1 9.219e+11 9.219e+11  198.369  < 2e-16 ***
+m:edgecoverorder                                                1 5.085e+10 5.085e+10   10.943 0.001008 ** 
+maxavgdegconnectivity:edgecoverorder                            1 5.663e+10 5.663e+10   12.185 0.000525 ***
+facts:edgecoverorder                                            1 9.431e+10 9.431e+10   20.293 8.31e-06 ***
+avgclustering:edgecoverorder                                    1 1.169e+11 1.169e+11   25.154 7.40e-07 ***
+greedycolors:edgecoverorder                                     1 2.786e+10 2.786e+10    5.994 0.014703 *  
+m:maxeigenvectorcentrality                                      1 3.074e+11 3.074e+11   66.152 3.43e-15 ***
+maxavgdegconnectivity:maxeigenvectorcentrality                  1 2.388e+11 2.388e+11   51.378 2.81e-12 ***
+facts:maxeigenvectorcentrality                                  1 9.528e+10 9.528e+10   20.502 7.48e-06 ***
+avgclustering:maxeigenvectorcentrality                          1 2.762e+10 2.762e+10    5.943 0.015133 *  
+greedycolors:maxeigenvectorcentrality                           1 4.190e+11 4.190e+11   90.171  < 2e-16 ***
+edgecoverorder:maxeigenvectorcentrality                         1 3.076e+10 3.076e+10    6.619 0.010379 *  
+m:maxtriangles                                                  1 8.377e+11 8.377e+11  180.250  < 2e-16 ***
+maxavgdegconnectivity:maxtriangles                              1 7.108e+11 7.108e+11  152.958  < 2e-16 ***
+facts:maxtriangles                                              1 1.606e+11 1.606e+11   34.551 7.67e-09 ***
+avgclustering:maxtriangles                                      1 2.745e+09 2.745e+09    0.591 0.442517    
+greedycolors:maxtriangles                                       1 4.176e+11 4.176e+11   89.854  < 2e-16 ***
+edgecoverorder:maxtriangles                                     1 8.991e+09 8.991e+09    1.935 0.164870    
+maxeigenvectorcentrality:maxtriangles                           1 5.001e+11 5.001e+11  107.612  < 2e-16 ***
+m:maxavgdegreeconnectivity                                      1 3.173e+10 3.173e+10    6.828 0.009247 ** 
+maxavgdegconnectivity:maxavgdegreeconnectivity                  1 4.397e+11 4.397e+11   94.625  < 2e-16 ***
+facts:maxavgdegreeconnectivity                                  1 1.545e+12 1.545e+12  332.351  < 2e-16 ***
+avgclustering:maxavgdegreeconnectivity                          1 3.875e+10 3.875e+10    8.339 0.004052 ** 
+greedycolors:maxavgdegreeconnectivity                           1 1.020e+11 1.020e+11   21.949 3.63e-06 ***
+edgecoverorder:maxavgdegreeconnectivity                         1 5.845e+11 5.845e+11  125.782  < 2e-16 ***
+maxeigenvectorcentrality:maxavgdegreeconnectivity               1 2.820e+10 2.820e+10    6.068 0.014107 *  
+maxtriangles:maxavgdegreeconnectivity                           1 7.217e+09 7.217e+09    1.553 0.213281    
+m:maxavgdegconnectivity:facts                                   1 1.472e+11 1.472e+11   31.681 3.06e-08 ***
+m:maxavgdegconnectivity:avgclustering                           1 1.735e+10 1.735e+10    3.733 0.053933 .  
+m:facts:avgclustering                                           1 1.558e+10 1.558e+10    3.353 0.067700 .  
+maxavgdegconnectivity:facts:avgclustering                       1 4.338e+11 4.338e+11   93.336  < 2e-16 ***
+m:maxavgdegconnectivity:greedycolors                            1 2.391e+11 2.391e+11   51.442 2.72e-12 ***
+m:facts:greedycolors                                            1 1.057e+11 1.057e+11   22.746 2.44e-06 ***
+maxavgdegconnectivity:facts:greedycolors                        1 1.584e+11 1.584e+11   34.083 9.60e-09 ***
+m:avgclustering:greedycolors                                    1 6.201e+10 6.201e+10   13.343 0.000287 ***
+maxavgdegconnectivity:avgclustering:greedycolors                1 2.256e+11 2.256e+11   48.538 1.04e-11 ***
+facts:avgclustering:greedycolors                                1 6.418e+10 6.418e+10   13.811 0.000225 ***
+m:maxavgdegconnectivity:edgecoverorder                          1 1.951e+08 1.951e+08    0.042 0.837732    
+m:facts:edgecoverorder                                          1 8.450e+10 8.450e+10   18.184 2.41e-05 ***
+maxavgdegconnectivity:facts:edgecoverorder                      1 1.099e+07 1.099e+07    0.002 0.961237    
+m:avgclustering:edgecoverorder                                  1 9.576e+10 9.576e+10   20.607 7.10e-06 ***
+maxavgdegconnectivity:avgclustering:edgecoverorder              1 6.502e+11 6.502e+11  139.910  < 2e-16 ***
+facts:avgclustering:edgecoverorder                              1 1.786e+10 1.786e+10    3.842 0.050537 .  
+m:greedycolors:edgecoverorder                                   1 7.001e+09 7.001e+09    1.506 0.220265    
+maxavgdegconnectivity:greedycolors:edgecoverorder               1 6.579e+09 6.579e+09    1.416 0.234699    
+facts:greedycolors:edgecoverorder                               1 4.245e+11 4.245e+11   91.335  < 2e-16 ***
+avgclustering:greedycolors:edgecoverorder                       1 1.931e+09 1.931e+09    0.416 0.519463    
+m:maxavgdegconnectivity:maxeigenvectorcentrality                1 3.200e+11 3.200e+11   68.861 1.02e-15 ***
+m:facts:maxeigenvectorcentrality                                1 2.127e+09 2.127e+09    0.458 0.499041    
+maxavgdegconnectivity:facts:maxeigenvectorcentrality            1 1.540e+08 1.540e+08    0.033 0.855641    
+m:avgclustering:maxeigenvectorcentrality                        1 2.970e+10 2.970e+10    6.392 0.011776 *  
+maxavgdegconnectivity:avgclustering:maxeigenvectorcentrality    1 1.333e+11 1.333e+11   28.680 1.31e-07 ***
+facts:avgclustering:maxeigenvectorcentrality                    1 6.917e+11 6.917e+11  148.842  < 2e-16 ***
+m:greedycolors:maxeigenvectorcentrality                         1 1.060e+11 1.060e+11   22.819 2.35e-06 ***
+maxavgdegconnectivity:greedycolors:maxeigenvectorcentrality     1 1.783e+11 1.783e+11   38.372 1.24e-09 ***
+facts:greedycolors:maxeigenvectorcentrality                     1 5.638e+11 5.638e+11  121.309  < 2e-16 ***
+avgclustering:greedycolors:maxeigenvectorcentrality             1 2.044e+10 2.044e+10    4.399 0.036464 *  
+m:edgecoverorder:maxeigenvectorcentrality                       1 5.093e+10 5.093e+10   10.960 0.000999 ***
+maxavgdegconnectivity:edgecoverorder:maxeigenvectorcentrality   1 9.564e+10 9.564e+10   20.579 7.20e-06 ***
+facts:edgecoverorder:maxeigenvectorcentrality                   1 6.761e+11 6.761e+11  145.480  < 2e-16 ***
+avgclustering:edgecoverorder:maxeigenvectorcentrality           1 5.656e+10 5.656e+10   12.171 0.000529 ***
+greedycolors:edgecoverorder:maxeigenvectorcentrality            1 6.745e+10 6.745e+10   14.515 0.000157 ***
+m:maxavgdegconnectivity:maxtriangles                            1 8.189e+10 8.189e+10   17.621 3.20e-05 ***
+m:facts:maxtriangles                                            1 3.390e+11 3.390e+11   72.943  < 2e-16 ***
+maxavgdegconnectivity:facts:maxtriangles                        1 1.302e+12 1.302e+12  280.190  < 2e-16 ***
+m:avgclustering:maxtriangles                                    1 1.591e+11 1.591e+11   34.232 8.93e-09 ***
+maxavgdegconnectivity:avgclustering:maxtriangles                1 1.079e+11 1.079e+11   23.220 1.93e-06 ***
+facts:avgclustering:maxtriangles                                1 9.912e+11 9.912e+11  213.291  < 2e-16 ***
+m:greedycolors:maxtriangles                                     1 7.831e+11 7.831e+11  168.501  < 2e-16 ***
+maxavgdegconnectivity:greedycolors:maxtriangles                 1 4.495e+09 4.495e+09    0.967 0.325857    
+facts:greedycolors:maxtriangles                                 1 7.371e+11 7.371e+11  158.603  < 2e-16 ***
+avgclustering:greedycolors:maxtriangles                         1 3.719e+11 3.719e+11   80.027  < 2e-16 ***
+m:edgecoverorder:maxtriangles                                   1 4.656e+10 4.656e+10   10.018 0.001646 ** 
+maxavgdegconnectivity:edgecoverorder:maxtriangles               1 1.165e+11 1.165e+11   25.063 7.74e-07 ***
+facts:edgecoverorder:maxtriangles                               1 1.039e+12 1.039e+12  223.604  < 2e-16 ***
+avgclustering:edgecoverorder:maxtriangles                       1 4.789e+10 4.789e+10   10.305 0.001413 ** 
+greedycolors:edgecoverorder:maxtriangles                        1 1.091e+12 1.091e+12  234.843  < 2e-16 ***
+m:maxeigenvectorcentrality:maxtriangles                         1 1.970e+11 1.970e+11   42.383 1.85e-10 ***
+maxavgdegconnectivity:maxeigenvectorcentrality:maxtriangles     1 5.919e+11 5.919e+11  127.358  < 2e-16 ***
+facts:maxeigenvectorcentrality:maxtriangles                     1 1.070e+12 1.070e+12  230.313  < 2e-16 ***
+avgclustering:maxeigenvectorcentrality:maxtriangles             1 6.644e+08 6.644e+08    0.143 0.705514    
+greedycolors:maxeigenvectorcentrality:maxtriangles              1 7.163e+09 7.163e+09    1.541 0.215008    
+edgecoverorder:maxeigenvectorcentrality:maxtriangles            1 2.930e+11 2.930e+11   63.039 1.38e-14 ***
+m:maxavgdegconnectivity:maxavgdegreeconnectivity                1 3.644e+11 3.644e+11   78.418  < 2e-16 ***
+m:facts:maxavgdegreeconnectivity                                1 1.135e+11 1.135e+11   24.433 1.06e-06 ***
+maxavgdegconnectivity:facts:maxavgdegreeconnectivity            1 1.566e+11 1.566e+11   33.701 1.15e-08 ***
+m:avgclustering:maxavgdegreeconnectivity                        1 1.014e+11 1.014e+11   21.817 3.88e-06 ***
+maxavgdegconnectivity:avgclustering:maxavgdegreeconnectivity    1 4.545e+11 4.545e+11   97.806  < 2e-16 ***
+facts:avgclustering:maxavgdegreeconnectivity                    1 2.765e+10 2.765e+10    5.950 0.015071 *  
+m:greedycolors:maxavgdegreeconnectivity                         1 1.351e+11 1.351e+11   29.074 1.08e-07 ***
+avgclustering:greedycolors:maxavgdegreeconnectivity             1 8.195e+11 8.195e+11  176.338  < 2e-16 ***
+avgclustering:edgecoverorder:maxavgdegreeconnectivity           1 5.441e+07 5.441e+07    0.012 0.913875    
+greedycolors:maxtriangles:maxavgdegreeconnectivity              1 2.440e+11 2.440e+11   52.506 1.67e-12 ***
+facts:avgclustering:greedycolors:maxavgdegreeconnectivity       1 1.288e+11 1.288e+11   27.712 2.11e-07 ***
+Residuals                                                     492 2.286e+12 4.647e+09                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+5 observations deleted due to missingness

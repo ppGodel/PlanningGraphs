@@ -1,0 +1,1 @@
+sort output.txt -g -k 5 | grep '\*\*\*' | cut -c 1-80 | awk '{$1=$1};1' | tr '\n' ':' | tr ':' '\n' | sort | uniq -c | tail -n +3 | awk '{print $2}' | tr '\n' '#' |  sed 's/#/ * / g' | rev | cut -c3- | rev > formula.txt
